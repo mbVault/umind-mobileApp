@@ -1,0 +1,36 @@
+{
+  "expo": {
+    "name": "U Mind",
+    "slug": "u-mind",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "umind",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "icon": "./images/logo/UmindLogo.png",
+    "splash": {
+      "image": "./images/logo/UmindLogo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FFF8F0"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.umind.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./images/logo/UmindLogo.png",
+        "backgroundColor": "#FFF8F0"
+      },
+      "package": "com.umind.app"
+    },
+    "extra": {
+      "apiBaseUrl": "http://10.0.2.2:4000/api"
+    },
+    "plugins": [
+      "expo-font",
+      "expo-secure-store",
+      "expo-asset"
+    ]
+  }
+}

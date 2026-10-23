@@ -1,0 +1,30 @@
+export const colors = {
+  primary: "#5B45E0",
+  primaryPressed: "#4331B8",
+  primaryTint: "#ECE8FF",
+  track: "#F1EAF9",
+  rail: "#D8D0F7",
+  ink: "#1F1B3A",
+  inkMuted: "#5F5A73",
+  background: "#FFF8F0",
+  surface: "#FFFFFF",
+  border: "#EDE3DA",
+  sun: "#FFB938",
+  sunTint: "#FFEFD0",
+  sunInk: "#8A5A12",
+  coral: "#FF6B57",
+  coralTint: "#FFE1DB",
+  coralInk: "#B83A24",
+  mint: "#3CCFA0",
+  mintTint: "#D9F5EA",
+  mintInk: "#0B6B4B",
+} as const;
+
+export const avatarColors = [
+  "#D9480F",
+  "#5B45E0",
+  "#0E8A62",
+  "#C2255C",
+  "#1971C2",
+  "#9C6B00",
+] as const;
