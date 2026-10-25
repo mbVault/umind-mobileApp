@@ -15,28 +15,46 @@ export class ApiError extends Error {
 }
 
 type RequestOptions = {
-  method?: "GET" | "POST" | "PATCH" | "PUT";
+  method?: "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
   body?: unknown;
   accessToken?: string;
+  headers?: Record<string, string>;
 };
 
 export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     "X-Client-Platform": CLIENT_PLATFORM,
+    ...options.headers,
   };
 
   if (options.accessToken) {
     headers.Authorization = `Bearer ${options.accessToken}`;
   }
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    method: options.method ?? "GET",
-    headers,
-    body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      method: options.method ?? "GET",
+      headers,
+      body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+    });
+  } catch {
+    throw new ApiError(
+      0,
+      "Cannot reach the server. Check that the backend is running and your phone is on the same Wi‑Fi.",
+    );
+  }
 
-  const payload = (await response.json()) as ApiSuccess<T> | ApiFail;
+  let payload: ApiSuccess<T> | ApiFail;
+  try {
+    payload = (await response.json()) as ApiSuccess<T> | ApiFail;
+  } catch {
+    throw new ApiError(
+      response.status,
+      "Invalid response from server. Check API URL (see Metro log for [U Mind] API_BASE_URL).",
+    );
+  }
 
   if (!response.ok || payload.status !== "success") {
     const fail = payload as ApiFail;

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { register } from "../api/auth";
-import { ApiError } from "../api/client";
+import { formatErrorMessage } from "../api/formatErrorMessage";
 import { useAuthSession } from "../auth/AuthSessionContext";
 import { OnboardingBackButton } from "../components/OnboardingBackButton";
 import { PrimaryButton } from "../components/PrimaryButton";
@@ -91,7 +91,10 @@ export function TrialScreen({ navigation }: Props) {
       });
       await establishSession(response);
     } catch (e) {
-      const message = e instanceof ApiError ? e.message : "Could not create your account.";
+      if (__DEV__) {
+        console.error("[U Mind] register failed:", e);
+      }
+      const message = formatErrorMessage(e, "Could not create your account.");
       Alert.alert("Registration failed", message);
     } finally {
       setLoading(false);

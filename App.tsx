@@ -13,13 +13,35 @@ import {
 import { useFonts } from "expo-font";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
+import { ActivityIndicator, Image, StyleSheet, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthSessionProvider, useAuthSession } from "./src/auth/AuthSessionContext";
 import { RootNavigator } from "./src/navigation/RootNavigator";
+import { ProfileProvider } from "./src/profile/ProfileContext";
+import { colors } from "./src/theme";
 
 function AppRoot() {
-  const { isAuthenticated } = useAuthSession();
-  return <RootNavigator isAuthenticated={isAuthenticated} />;
+  const { isAuthenticated, isBootstrapping } = useAuthSession();
+
+  if (isBootstrapping) {
+    return (
+      <View style={styles.boot}>
+        <Image
+          source={require("./images/logo/UmindLogo.png")}
+          style={styles.logo}
+          resizeMode="contain"
+          accessibilityLabel="U Mind"
+        />
+        <ActivityIndicator color={colors.primary} style={{ marginTop: 24 }} />
+      </View>
+    );
+  }
+
+  return (
+    <ProfileProvider>
+      <RootNavigator isAuthenticated={isAuthenticated} />
+    </ProfileProvider>
+  );
 }
 
 export default function App() {
@@ -48,3 +70,13 @@ export default function App() {
     </SafeAreaProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  boot: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.background,
+  },
+  logo: { width: 140, height: 140 },
+});

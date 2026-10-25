@@ -10,7 +10,9 @@ export const secureStorage = {
     return SecureStore.getItemAsync(KEYS.refreshToken);
   },
   async setRefreshToken(token: string): Promise<void> {
-    await SecureStore.setItemAsync(KEYS.refreshToken, token);
+    await SecureStore.setItemAsync(KEYS.refreshToken, token, {
+      keychainAccessible: SecureStore.WHEN_UNLOCKED,
+    });
   },
   async clearRefreshToken(): Promise<void> {
     await SecureStore.deleteItemAsync(KEYS.refreshToken);
@@ -19,6 +21,8 @@ export const secureStorage = {
     return SecureStore.getItemAsync(KEYS.deviceId);
   },
   async setDeviceId(id: string): Promise<void> {
-    await SecureStore.setItemAsync(KEYS.deviceId, id);
+    await SecureStore.setItemAsync(KEYS.deviceId, id, {
+      keychainAccessible: SecureStore.WHEN_UNLOCKED,
+    });
   },
 };

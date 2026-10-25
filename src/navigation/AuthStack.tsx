@@ -1,10 +1,10 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { OnboardingDraftProvider } from "../onboarding/OnboardingDraftContext";
+import { PsychologistNavigator } from "../psychologist";
 import { AliasScreen } from "../screens/AliasScreen";
 import { LifeStageScreen } from "../screens/LifeStageScreen";
 import { PathwayScreen } from "../screens/PathwayScreen";
 import { PersonalizationScreen } from "../screens/PersonalizationScreen";
-import { PlaceholderScreen } from "../screens/PlaceholderScreen";
 import { RecoverScreen } from "../screens/RecoverScreen";
 import { RecoveryKeyScreen } from "../screens/RecoveryKeyScreen";
 import { SplashScreen } from "../screens/SplashScreen";
@@ -23,9 +23,8 @@ export function AuthStack() {
         <Stack.Screen name="Pathway" component={PathwayScreen} />
         <Stack.Screen
           name="PsychologistEntry"
-          component={() => (
-            <PlaceholderScreen title="Psychologist side" subtitle="Login and dashboard — coming soon" />
-          )}
+          component={PsychologistNavigator}
+          options={{ animation: "slide_from_right" }}
         />
         <Stack.Screen name="Welcome" component={WelcomeScreen} />
         <Stack.Screen name="Alias" component={AliasScreen} />

@@ -12,7 +12,22 @@ export type AuthStackParamList = {
   Trial: undefined;
 };
 
+export type SaathiReflectParams = {
+  entryDate: string;
+  causes: string[];
+  prompt?: string;
+  body: string;
+};
+
+export type MainTabParamList = {
+  Home: undefined;
+  Saathi: { reflect?: SaathiReflectParams } | undefined;
+  Diary: undefined;
+  Listen: { category?: string } | undefined;
+  Experts: undefined;
+};
+
 export type RootStackParamList = {
   Auth: undefined;
-  Home: undefined;
+  Main: undefined;
 };
