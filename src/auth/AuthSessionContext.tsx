@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { getAuthSession, refreshSession, type RegisterResponse } from "../api/auth";
+import { getAuthSession, logoutSession, refreshSession, type RegisterResponse } from "../api/auth";
 import { secureStorage } from "../storage/secureStorage";
 
 type SessionUser = RegisterResponse["user"];
@@ -11,6 +11,8 @@ type ContextValue = {
   accessToken: string | null;
   establishSession: (response: RegisterResponse) => Promise<void>;
   clearSession: () => Promise<void>;
+  /** Revoke this device's refresh token on the server, then clear local session. */
+  logout: () => Promise<void>;
 };
 
 const AuthSessionContext = createContext<ContextValue | null>(null);
@@ -25,6 +27,18 @@ export function AuthSessionProvider({ children }: { children: ReactNode }) {
     setAccessToken(null);
     await secureStorage.clearRefreshToken();
   }, []);
+
+  const logout = useCallback(async () => {
+    const refreshToken = await secureStorage.getRefreshToken();
+    if (refreshToken) {
+      try {
+        await logoutSession(refreshToken);
+      } catch {
+        // Still clear local credentials if the network call fails.
+      }
+    }
+    await clearSession();
+  }, [clearSession]);
 
   const establishSession = useCallback(async (response: RegisterResponse) => {
     if (!response.tokens?.accessToken || !response.tokens?.refreshToken) {
@@ -88,8 +102,9 @@ export function AuthSessionProvider({ children }: { children: ReactNode }) {
       accessToken,
       establishSession,
       clearSession,
+      logout,
     }),
-    [isBootstrapping, user, accessToken, establishSession, clearSession],
+    [isBootstrapping, user, accessToken, establishSession, clearSession, logout],
   );
 
   return <AuthSessionContext.Provider value={value}>{children}</AuthSessionContext.Provider>;

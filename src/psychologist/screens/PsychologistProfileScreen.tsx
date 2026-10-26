@@ -4,6 +4,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { fetchPsychologistMe, patchPsychologistProfile } from "../api/psychologistApi";
 import { StaffApiError } from "../api/staffClient";
+import { usePsychologistAuth } from "../auth/PsychologistAuthContext";
 import { OnboardingProgress } from "../components/OnboardingProgress";
 import { PsychPrimaryButton } from "../components/PsychPrimaryButton";
 import { PsychTextField } from "../components/PsychTextField";
@@ -32,6 +33,7 @@ function initialsFromName(name: string): string {
 }
 
 export function PsychologistProfileScreen({ navigation }: Props) {
+  const { refreshAccess } = usePsychologistAuth();
   const [visibility, setVisibility] = useState<Visibility>("DISPLAY_NAME_AND_AVATAR");
   const [displayName, setDisplayName] = useState("");
   const [avatarColor, setAvatarColor] = useState<string>(PROFILE_AVATAR_COLORS[0]);
@@ -110,6 +112,7 @@ export function PsychologistProfileScreen({ navigation }: Props) {
         avatarColor,
         avatarInitials: initials.slice(0, 4),
       });
+      await refreshAccess();
       navigation.navigate("PsychologistDocumentsPlaceholder");
     } catch (err) {
       setError(err instanceof StaffApiError ? err.message : "Could not save profile.");

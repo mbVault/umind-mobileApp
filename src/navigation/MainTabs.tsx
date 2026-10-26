@@ -4,9 +4,9 @@ import { colors } from "../theme";
 import { fonts } from "../theme/typography";
 import { DiaryScreen } from "../screens/diary/DiaryScreen";
 import { ExpertsScreen } from "../screens/home/ExpertsScreen";
-import { HomeScreen } from "../screens/home/HomeScreen";
 import { ListenScreen } from "../screens/listen/ListenScreen";
 import { SaathiScreen } from "../screens/saathi/SaathiScreen";
+import { HomeStack } from "./HomeStack";
 import type { MainTabParamList } from "./types";
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -41,7 +41,7 @@ export function MainTabs() {
         },
       })}
     >
-      <Tab.Screen name="Home" component={HomeScreen} />
+      <Tab.Screen name="Home" component={HomeStack} />
       <Tab.Screen name="Saathi" component={SaathiScreen} />
       <Tab.Screen name="Diary" component={DiaryScreen} />
       <Tab.Screen name="Listen" component={ListenScreen} />

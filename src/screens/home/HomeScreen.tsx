@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, type CompositeNavigationProp } from "@react-navigation/native";
 import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -29,7 +30,7 @@ import {
   greetingForNow,
   lifeStageForYouLabel,
 } from "../../home/labels";
-import type { MainTabParamList } from "../../navigation/types";
+import type { HomeStackParamList, MainTabParamList } from "../../navigation/types";
 import { useProfile } from "../../profile/ProfileContext";
 import { fetchLiveWeather, type LiveWeather } from "../../services/weather";
 import type { MoodKey } from "../../storage/moodStorage";
@@ -50,8 +51,13 @@ const MORE = [
   { title: "Session prep & after-care", sub: "Make every ₹499 session count", tint: colors.sunTint },
 ];
 
+type HomeNav = CompositeNavigationProp<
+  NativeStackNavigationProp<HomeStackParamList, "HomeMain">,
+  BottomTabNavigationProp<MainTabParamList>
+>;
+
 export function HomeScreen() {
-  const navigation = useNavigation<BottomTabNavigationProp<MainTabParamList>>();
+  const navigation = useNavigation<HomeNav>();
   const { user, accessToken } = useAuthSession();
   const { profile, loading: profileLoading } = useProfile();
 
@@ -129,13 +135,18 @@ export function HomeScreen() {
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.headerRow}>
-          <View style={styles.greetingRow}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Open profile"
+            onPress={() => navigation.navigate("Profile")}
+            style={styles.greetingRow}
+          >
             <DiceBearAvatar styleKey={avatar.style} seed={avatar.seed} size={40} />
             <View>
               <Text style={styles.greetingMeta}>{greetingForNow()},</Text>
               <Text style={styles.greetingName}>{alias}</Text>
             </View>
-          </View>
+          </Pressable>
           <View style={styles.headerActions}>
             <Pressable
               accessibilityLabel="Hidden mode"

@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { putPsychologistApplication } from "../api/psychologistApi";
 import { StaffApiError } from "../api/staffClient";
+import { usePsychologistAuth } from "../auth/PsychologistAuthContext";
 import { ExpertHeader } from "../components/ExpertHeader";
 import { PsychChipGroup } from "../components/PsychChipGroup";
 import { PsychPrimaryButton } from "../components/PsychPrimaryButton";
@@ -16,6 +17,8 @@ import { fonts, psychColors, radius, spacing, typeScale } from "../theme";
 type Props = NativeStackScreenProps<PsychologistStackParamList, "PsychologistApply">;
 
 export function PsychologistApplyScreen({ navigation }: Props) {
+  const { isApplicant, refreshAccess } = usePsychologistAuth();
+  const [legalName, setLegalName] = useState("");
   const [rci, setRci] = useState("");
   const [degree, setDegree] = useState("");
   const [years, setYears] = useState(6);
@@ -28,19 +31,27 @@ export function PsychologistApplyScreen({ navigation }: Props) {
 
   const onNext = async () => {
     setError(null);
-    if (!rci.trim() || !degree.trim() || specialisations.length === 0 || languages.length === 0) {
-      setError("Fill RCI, degree, and pick at least one specialisation and language.");
+    if (
+      !legalName.trim() ||
+      !rci.trim() ||
+      !degree.trim() ||
+      specialisations.length === 0 ||
+      languages.length === 0
+    ) {
+      setError("Fill legal name, RCI, degree, and pick at least one specialisation and language.");
       return;
     }
     setLoading(true);
     try {
       await putPsychologistApplication({
+        legalFullName: legalName.trim(),
         rciRegistrationNumber: rci.trim(),
         highestDegree: degree.trim(),
         yearsPractising: years,
         specialisations,
         languages,
       });
+      await refreshAccess();
       navigation.navigate("PsychologistProfile");
     } catch (err) {
       setError(err instanceof StaffApiError ? err.message : "Could not save application draft.");
@@ -57,9 +68,18 @@ export function PsychologistApplyScreen({ navigation }: Props) {
           Reach people who would never walk into a clinic.
         </Text>
         <Text style={styles.sub}>
-          Clients come to you anonymous, already heard by Saathi, with a summary if they choose to
-          share it.
+          {isApplicant
+            ? "Apply to join U Mind. HR reviews this before you can Sign in."
+            : "Clients come to you anonymous, already heard by Saathi, with a summary if they choose to share it."}
         </Text>
+
+        <PsychTextField
+          label="Legal full name"
+          value={legalName}
+          onChangeText={setLegalName}
+          placeholder="As on your ID / RCI"
+          focusedBorder
+        />
 
         <PsychTextField
           label="RCI registration number"

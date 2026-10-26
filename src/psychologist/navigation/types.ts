@@ -4,6 +4,7 @@ export type PsychologistStackParamList = {
   PsychologistProfile: undefined;
   PsychologistDocumentsPlaceholder: undefined;
   PsychologistBackgroundCheck: undefined;
+  PsychologistPendingReview: undefined;
   PsychologistMain: undefined;
 };
 
@@ -12,4 +13,5 @@ export type PsychologistMainTabParamList = {
   Hours: undefined;
   Clients: undefined;
   Earnings: undefined;
+  Profile: undefined;
 };

@@ -33,6 +33,8 @@ export type PsychologistProfileDto = {
   aadhaarLast4: string | null;
   onboardingStep: string;
   applicationSubmittedAt?: string | null;
+  hrApprovalStatus: string;
+  hrRejectionReason?: string | null;
   publicationStatus: string;
   accountStatus: string;
   publishedAt?: string | null;
@@ -47,6 +49,19 @@ export type PsychologistProfileDto = {
 };
 
 export const fetchStaffMe = () => staffRequest<StaffMe>("/me");
+
+export type StaffAccessKind = "PSYCHOLOGIST" | "APPLICANT" | "IDENTITY_ONLY";
+
+export type StaffAccessDto = {
+  access: StaffAccessKind;
+  staff: StaffMe | null;
+  profile: PsychologistProfileDto | null;
+};
+
+export const fetchStaffAccess = () => staffRequest<StaffAccessDto>("/access");
+
+export const startOnboardSession = (body?: { email?: string }) =>
+  staffRequest<StaffAccessDto>("/access/onboard/start", { method: "POST", body: body ?? {} });
 
 export const fetchPsychologistMe = () => staffRequest<PsychologistProfileDto>("/psychologist/me");
 
@@ -71,6 +86,10 @@ export const patchPsychologistProfile = (body: {
 
 export const submitPsychologistApplication = () =>
   staffRequest<PsychologistProfileDto>("/psychologist/me/application/submit", { method: "POST" });
+
+/** Pre-HR screening submit (hrApprovalStatus stays PENDING_APPROVAL). */
+export const submitForHrReview = () =>
+  staffRequest<PsychologistProfileDto>("/psychologist/me/application/submit-hr", { method: "POST" });
 
 export type DashboardBooking = {
   bookingId: string;

@@ -3,6 +3,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { PsychologistClientsScreen } from "../screens/PsychologistClientsScreen";
 import { PsychologistEarningsScreen } from "../screens/PsychologistEarningsScreen";
 import { PsychologistHoursScreen } from "../screens/PsychologistHoursScreen";
+import { PsychologistMyProfileScreen } from "../screens/PsychologistMyProfileScreen";
 import { PsychologistTodayScreen } from "../screens/PsychologistTodayScreen";
 import { fonts, psychColors } from "../theme";
 import { PsychologistMainTabParamList } from "./types";
@@ -33,6 +34,7 @@ export function PsychologistMainTabs() {
             Hours: "calendar-outline",
             Clients: "people-outline",
             Earnings: "cash-outline",
+            Profile: "person-outline",
           };
           return <Ionicons name={map[route.name]} size={size} color={color} />;
         },
@@ -42,6 +44,7 @@ export function PsychologistMainTabs() {
       <Tab.Screen name="Hours" component={PsychologistHoursScreen} />
       <Tab.Screen name="Clients" component={PsychologistClientsScreen} />
       <Tab.Screen name="Earnings" component={PsychologistEarningsScreen} />
+      <Tab.Screen name="Profile" component={PsychologistMyProfileScreen} options={{ title: "Profile" }} />
     </Tab.Navigator>
   );
 }
