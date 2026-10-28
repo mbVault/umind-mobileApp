@@ -75,6 +75,12 @@ export function TrialScreen({ navigation }: Props) {
     setLoading(true);
     try {
       const deviceId = await getOrCreateDeviceId();
+      const planCode =
+        draft.subscriptionPlan === "monthly"
+          ? "MONTHLY"
+          : draft.subscriptionPlan === "quarterly"
+            ? "QUARTERLY"
+            : "YEARLY";
       const response = await register({
         recoveryKey: formatRecoveryKey(draft.recoveryKeyWords),
         alias: draft.alias.trim(),
@@ -88,6 +94,7 @@ export function TrialScreen({ navigation }: Props) {
         saathiLanguage: saathiPrefs.saathiLanguage,
         unwindHabits: saathiPrefs.unwindHabits,
         deviceId,
+        subscriptionPlanCode: planCode,
       });
       await establishSession(response);
     } catch (e) {

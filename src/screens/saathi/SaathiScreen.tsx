@@ -57,6 +57,7 @@ export function SaathiScreen() {
   const [blocked, setBlocked] = useState(false);
   const [crisis, setCrisis] = useState<CrisisResource[]>([]);
   const [recs, setRecs] = useState<AudioRecommendation[]>([]);
+  const [firstReplyAudio, setFirstReplyAudio] = useState(false);
   const [voiceHint, setVoiceHint] = useState(false);
   const listRef = useRef<FlatList<ChatRow>>(null);
   const bootOnce = useRef(false);
@@ -142,6 +143,7 @@ export function SaathiScreen() {
       });
       setCrisis(result.crisisResources ?? []);
       setRecs(result.audioRecommendations ?? []);
+      setFirstReplyAudio(Boolean(result.isFirstAssistantReply && (result.audioRecommendations?.length ?? 0) > 0));
       scrollToEnd();
     } catch (e) {
       setRows((prev) => prev.filter((r) => !(r.kind === "message" && r.message.id === optimistic.id)));
@@ -275,18 +277,25 @@ export function SaathiScreen() {
                 ) : null}
 
                 {recs.length > 0 ? (
-                  <View style={styles.recs}>
-                    <Text style={styles.recsTitle}>Suggested listens</Text>
+                  <View style={[styles.recs, firstReplyAudio && styles.recsHero]}>
+                    <Text style={styles.recsTitle}>
+                      {firstReplyAudio ? "A listen for what you shared" : "Suggested listens"}
+                    </Text>
                     {recs.map((r) => (
                       <Pressable
                         key={r.trackId}
-                        style={styles.recCard}
+                        style={[styles.recCard, firstReplyAudio && styles.recCardHero]}
                         onPress={() => navigation.navigate("Listen")}
                       >
-                        <Text style={styles.recTitle}>{r.title}</Text>
-                        <Text style={styles.recMeta}>
-                          {r.category} · {r.language}
-                        </Text>
+                        <View style={{ flex: 1, gap: 2 }}>
+                          <Text style={styles.recTitle}>{r.title}</Text>
+                          <Text style={styles.recMeta}>
+                            {r.category} · {r.language}
+                          </Text>
+                        </View>
+                        {firstReplyAudio ? (
+                          <Ionicons name="play-circle" size={28} color={colors.primary} />
+                        ) : null}
                       </Pressable>
                     ))}
                   </View>
@@ -495,6 +504,13 @@ const styles = StyleSheet.create({
     color: colors.primary,
   },
   recs: { gap: spacing.sm },
+  recsHero: {
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderRadius: radius.card,
+    padding: spacing.md,
+    backgroundColor: colors.primaryTint,
+  },
   recsTitle: {
     fontFamily: fonts.sansExtraBold,
     fontSize: 13,
@@ -504,6 +520,14 @@ const styles = StyleSheet.create({
     backgroundColor: colors.mintTint,
     borderRadius: radius.card,
     padding: spacing.lg,
+  },
+  recCardHero: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   recTitle: { fontFamily: fonts.sansBold, fontSize: 14, color: colors.mintInk },
   recMeta: { fontFamily: fonts.sans, fontSize: 12, color: colors.inkMuted, marginTop: 2 },

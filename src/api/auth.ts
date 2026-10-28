@@ -1,5 +1,7 @@
 import { apiRequest } from "./client";
 
+export type SubscriptionPlanCode = "YEARLY" | "QUARTERLY" | "MONTHLY";
+
 export type RegisterPayload = {
   recoveryKey: string;
   alias: string;
@@ -13,6 +15,8 @@ export type RegisterPayload = {
   saathiLanguage: string;
   unwindHabits: string[];
   deviceId?: string;
+  /** Starts the 7-day free trial in the same register call (Trial screen CTA). */
+  subscriptionPlanCode?: SubscriptionPlanCode;
 };
 
 export type AuthTokens = {

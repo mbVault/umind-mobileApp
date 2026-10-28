@@ -35,6 +35,8 @@ export type SendSaathiMessageResult = {
   safetyLevel: "NORMAL" | "ELEVATED" | "IMMEDIATE" | "OUT_OF_SCOPE";
   crisisResources: CrisisResource[];
   audioRecommendations: AudioRecommendation[];
+  /** First assistant turn: empathy text + matched listen. */
+  isFirstAssistantReply?: boolean;
   deduped: boolean;
 };
 
