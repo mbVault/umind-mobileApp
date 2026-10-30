@@ -2,7 +2,11 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { fetchPsychologistMe, patchPsychologistProfile } from "../api/psychologistApi";
+import {
+  fetchPsychologistMe,
+  patchPsychologistProfile,
+  submitForHrReview,
+} from "../api/psychologistApi";
 import { StaffApiError } from "../api/staffClient";
 import { usePsychologistAuth } from "../auth/PsychologistAuthContext";
 import { OnboardingProgress } from "../components/OnboardingProgress";
@@ -33,7 +37,7 @@ function initialsFromName(name: string): string {
 }
 
 export function PsychologistProfileScreen({ navigation }: Props) {
-  const { refreshAccess } = usePsychologistAuth();
+  const { isApplicant, refreshAccess } = usePsychologistAuth();
   const [visibility, setVisibility] = useState<Visibility>("DISPLAY_NAME_AND_AVATAR");
   const [displayName, setDisplayName] = useState("");
   const [avatarColor, setAvatarColor] = useState<string>(PROFILE_AVATAR_COLORS[0]);
@@ -112,6 +116,13 @@ export function PsychologistProfileScreen({ navigation }: Props) {
         avatarColor,
         avatarInitials: initials.slice(0, 4),
       });
+      // F1: applicants submit for HR after profile; documents come after approval (F2).
+      if (isApplicant) {
+        await submitForHrReview();
+        await refreshAccess();
+        navigation.navigate("PsychologistPendingReview");
+        return;
+      }
       await refreshAccess();
       navigation.navigate("PsychologistDocumentsPlaceholder");
     } catch (err) {
@@ -213,7 +224,7 @@ export function PsychologistProfileScreen({ navigation }: Props) {
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
         <PsychPrimaryButton
-          label="Next: upload documents"
+          label={isApplicant ? "Submit for HR review" : "Next: upload documents"}
           onPress={onSave}
           loading={loading || booting}
           disabled={booting}

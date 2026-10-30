@@ -120,36 +120,33 @@ export function PsychologistAuthProvider({ children }: PropsWithChildren) {
     };
   }, [applyAccess]);
 
+  /**
+   * Sign-in completion: keep session for approved psychologists OR returning applicants.
+   * Applicants stay APPLICANT — never grant clinic access here.
+   */
   const completeSessionAsPsychologist = useCallback(async () => {
     const dto = await fetchStaffAccess();
     const hasPsychRole = Boolean(dto.staff?.roles.includes("PSYCHOLOGIST"));
-    const hrStatus = dto.profile?.hrApprovalStatus;
-    const hrApproved = hrStatus === "APPROVED";
+    const hrApproved = dto.profile?.hrApprovalStatus === "APPROVED";
 
     if (dto.access === "PSYCHOLOGIST" && hasPsychRole && hrApproved) {
       applyAccess(dto);
       return;
     }
 
+    // Returning applicant (submitted, pending, or rejected) — resume application status.
+    if (dto.access === "APPLICANT" && dto.staff && dto.profile) {
+      applyAccess(dto);
+      return;
+    }
+
     await SuperTokens.signOut();
 
-    // No staff Account / never started Onboard me
     if (dto.access === "IDENTITY_ONLY" || !dto.staff) {
       throw new StaffApiError(403, "No account found. Tap Onboard me to apply.");
     }
 
-    // Application exists but HR has not approved (with or without role edge cases)
-    if (hrStatus === "REJECTED") {
-      throw new StaffApiError(
-        403,
-        "Your application was rejected by HR. Tap Onboard me to update and resubmit."
-      );
-    }
-
-    throw new StaffApiError(
-      403,
-      "Your account is not yet approved by HR. You can’t Sign in until approval."
-    );
+    throw new StaffApiError(403, "Could not sign in. Tap Onboard me to continue your application.");
   }, [applyAccess]);
 
   const completeOnboardIdentity = useCallback(

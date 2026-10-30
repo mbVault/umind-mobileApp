@@ -1,3 +1,4 @@
+import { useFocusEffect } from "@react-navigation/native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useCallback, useMemo, useState } from "react";
 import {
@@ -7,56 +8,27 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useFocusEffect } from "@react-navigation/native";
-import { fetchPsychologistMe, PsychologistCheckDto, PsychologistProfileDto } from "../api/psychologistApi";
+import {
+  fetchPsychologistMe,
+  PsychologistProfileDto,
+  submitClarificationResponse,
+} from "../api/psychologistApi";
 import { StaffApiError } from "../api/staffClient";
 import { OnboardingProgress } from "../components/OnboardingProgress";
 import { PsychPrimaryButton } from "../components/PsychPrimaryButton";
+import {
+  buildVerificationRows,
+  VerificationChecklist,
+  VERIFICATION_CHECK_ORDER,
+} from "../components/VerificationChecklist";
 import { PsychologistStackParamList } from "../navigation/types";
 import { fonts, psychColors, radius, spacing } from "../theme";
 
 type Props = NativeStackScreenProps<PsychologistStackParamList, "PsychologistBackgroundCheck">;
-
-type CheckStatus = "QUEUED" | "IN_PROGRESS" | "VERIFIED" | "NEEDS_ATTENTION";
-
-const CHECK_ORDER = ["IDENTITY", "RCI_REGISTRATION", "DEGREE", "YEARS_OF_EXPERIENCE"] as const;
-
-const CHECK_COPY: Record<
-  (typeof CHECK_ORDER)[number],
-  { title: string; verified: string; inProgress: string; queued: string; needsAttention: string }
-> = {
-  IDENTITY: {
-    title: "Identity",
-    verified: "Govt ID matched to your selfie and photo",
-    inProgress: "Matching your govt ID to selfie and photo",
-    queued: "Waiting to match govt ID to your selfie and photo",
-    needsAttention: "Identity needs a clearer ID or selfie",
-  },
-  RCI_REGISTRATION: {
-    title: "RCI registration",
-    verified: "Checked against the RCI register",
-    inProgress: "Checking against the RCI register",
-    queued: "Queued to check against the RCI register",
-    needsAttention: "RCI number could not be verified — please re-check",
-  },
-  DEGREE: {
-    title: "Degree",
-    verified: "Confirmed with your university",
-    inProgress: "Confirming with your university",
-    queued: "Queued to confirm with your university",
-    needsAttention: "Degree documents need attention",
-  },
-  YEARS_OF_EXPERIENCE: {
-    title: "Years of experience",
-    verified: "Experience letters verified",
-    inProgress: "Checking experience letters",
-    queued: "Queued to check experience letters",
-    needsAttention: "Experience letters need attention",
-  },
-};
 
 const formatShortDate = (iso: string | null | undefined): string => {
   if (!iso) return "—";
@@ -65,68 +37,17 @@ const formatShortDate = (iso: string | null | undefined): string => {
   return d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
 };
 
-const addWorkingDays = (from: Date, days: number): Date => {
-  const out = new Date(from);
-  let left = days;
-  while (left > 0) {
-    out.setDate(out.getDate() + 1);
-    const dow = out.getDay();
-    if (dow !== 0 && dow !== 6) left -= 1;
-  }
-  return out;
-};
-
-const statusBadge = (status: CheckStatus) => {
-  switch (status) {
-    case "VERIFIED":
-      return { label: "Verified", bg: psychColors.mintTint, ink: psychColors.mintInk };
-    case "IN_PROGRESS":
-      return { label: "In progress", bg: psychColors.sunTint, ink: psychColors.sunInk };
-    case "NEEDS_ATTENTION":
-      return { label: "Needs attention", bg: psychColors.coralTint, ink: psychColors.coralInk };
-    default:
-      return { label: "Queued", bg: psychColors.primaryTint, ink: psychColors.primary };
-  }
-};
-
-const statusIcon = (status: CheckStatus) => {
-  switch (status) {
-    case "VERIFIED":
-      return { bg: psychColors.mintTint, glyph: "✓", color: psychColors.mintInk };
-    case "IN_PROGRESS":
-      return { bg: psychColors.sunTint, glyph: "◷", color: psychColors.sunInk };
-    case "NEEDS_ATTENTION":
-      return { bg: psychColors.coralTint, glyph: "!", color: psychColors.coralInk };
-    default:
-      return { bg: psychColors.primaryTint, glyph: "◷", color: psychColors.primary };
-  }
-};
-
-const descriptionFor = (
-  type: (typeof CHECK_ORDER)[number],
-  status: CheckStatus,
-  yearsPractising: number | null
-): string => {
-  const copy = CHECK_COPY[type];
-  if (status === "VERIFIED") return copy.verified;
-  if (status === "IN_PROGRESS") {
-    if (type === "YEARS_OF_EXPERIENCE" && yearsPractising != null) {
-      return `Checking experience letters, ${yearsPractising} yrs claimed`;
-    }
-    return copy.inProgress;
-  }
-  if (status === "NEEDS_ATTENTION") return copy.needsAttention;
-  if (type === "YEARS_OF_EXPERIENCE" && yearsPractising != null) {
-    return `Checking experience letters, ${yearsPractising} yrs claimed`;
-  }
-  return copy.queued;
-};
-
+/**
+ * F3 — verification experience (States 6, 7A, 7B).
+ * Clinic / LIVE only after publication. NEEDS_ATTENTION is clarification, not final reject.
+ */
 export function PsychologistBackgroundCheckScreen({ navigation }: Props) {
   const [profile, setProfile] = useState<PsychologistProfileDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [clarifyNote, setClarifyNote] = useState("");
+  const [clarifyBusy, setClarifyBusy] = useState(false);
 
   const load = useCallback(async (mode: "boot" | "refresh" = "boot") => {
     if (mode === "boot") setLoading(true);
@@ -135,6 +56,9 @@ export function PsychologistBackgroundCheckScreen({ navigation }: Props) {
     try {
       const me = await fetchPsychologistMe();
       setProfile(me);
+      if (me.publicationStatus === "LIVE") {
+        // Navigator remounts Main when access/profile refresh lands LIVE.
+      }
     } catch (err) {
       setError(err instanceof StaffApiError ? err.message : "Could not load verification status.");
     } finally {
@@ -149,58 +73,62 @@ export function PsychologistBackgroundCheckScreen({ navigation }: Props) {
     }, [load])
   );
 
-  const checksByType = useMemo(() => {
-    const map = new Map<string, PsychologistCheckDto>();
-    for (const c of profile?.checks ?? []) map.set(c.type, c);
-    return map;
-  }, [profile]);
-
-  const rows = CHECK_ORDER.map((type) => {
-    const row = checksByType.get(type);
-    const status = (row?.status as CheckStatus | undefined) ?? "QUEUED";
-    return { type, status, id: row?.id };
-  });
-
+  const rows = useMemo(() => buildVerificationRows(profile?.checks), [profile?.checks]);
   const verifiedCount = rows.filter((r) => r.status === "VERIFIED").length;
-  const allVerified = verifiedCount === CHECK_ORDER.length;
+  const allVerified = verifiedCount === VERIFICATION_CHECK_ORDER.length;
   const anyNeedsAttention = rows.some((r) => r.status === "NEEDS_ATTENTION");
-  const isLive = profile?.publicationStatus === "LIVE";
+  const anyInProgress = rows.some((r) => r.status === "IN_PROGRESS");
+  const publication = profile?.publicationStatus ?? "NOT_SUBMITTED";
+  const isLive = publication === "LIVE";
+  const awaitingPublish = publication === "VERIFIED_UNPUBLISHED" || (allVerified && !isLive);
+  const needsDocs = profile?.applicantNextAction === "UPLOAD_DOC";
+  const clarifyAction = profile?.applicantNextAction === "CLARIFY";
+  const clarify = clarifyAction || anyNeedsAttention;
 
-  const submittedAt = profile?.applicationSubmittedAt
-    ? new Date(profile.applicationSubmittedAt)
-    : null;
-  const expectedStart = submittedAt ? addWorkingDays(submittedAt, 3) : null;
-  const expectedEnd = submittedAt ? addWorkingDays(submittedAt, 5) : null;
-
-  const bannerTitle = isLive
-    ? "YOU'RE LIVE"
-    : anyNeedsAttention
-      ? "ACTION NEEDED ON YOUR CHECKS"
-      : allVerified
-        ? "CHECKS COMPLETE"
-        : "BACKGROUND CHECK IN PROGRESS";
-
-  const bannerHeadline = isLive
-    ? "Clients can find and book you now."
-    : anyNeedsAttention
-      ? "Fix the items marked Needs attention, then resubmit docs if asked."
-      : allVerified
-        ? "All four checks passed. U Mind will publish you shortly."
-        : "You'll be live in 3–5 working days";
-
-  const timeline =
-    submittedAt && expectedStart && expectedEnd
-      ? `Submitted ${formatShortDate(submittedAt.toISOString())} · Expected ${formatShortDate(
-          expectedStart.toISOString()
-        )}–${formatShortDate(expectedEnd.toISOString()).replace(/^[A-Za-z]+,\s*/, "")}`
-      : "Submit your application to start the background check.";
-
-  const progressPct = Math.max(0.08, verifiedCount / CHECK_ORDER.length);
-
-  const onHoursCta = () => {
-    // Enter main shell (Today is live). Hours tab is next full build.
-    navigation.navigate("PsychologistMain");
+  const onSubmitClarification = async () => {
+    if (!clarifyAction) return;
+    setError(null);
+    setClarifyBusy(true);
+    try {
+      const me = await submitClarificationResponse(clarifyNote.trim());
+      setProfile(me);
+      setClarifyNote("");
+    } catch (err) {
+      setError(err instanceof StaffApiError ? err.message : "Could not send clarification.");
+    } finally {
+      setClarifyBusy(false);
+    }
   };
+
+  // 7B / 7A / State 6 banners — never claim public bookability before LIVE.
+  let bannerTitle = "BACKGROUND CHECK IN PROGRESS";
+  let bannerHeadline = "Verification is underway. We’ll update each check as it moves.";
+  let bannerNote =
+    "This is not a final decision. You don’t need to do anything unless a check asks for attention.";
+
+  if (isLive) {
+    bannerTitle = "YOU'RE LIVE";
+    bannerHeadline = "Your profile is published. Clients can find and book you.";
+    bannerNote = "Open your professional workspace when you’re ready.";
+  } else if (awaitingPublish) {
+    bannerTitle = "VERIFICATION COMPLETE";
+    bannerHeadline = "All checks are done. Awaiting publication.";
+    bannerNote =
+      "You’re not publicly bookable yet. U Mind will publish your profile when ready — the clinic opens only after that.";
+  } else if (clarify) {
+    bannerTitle = "CLARIFICATION NEEDED";
+    bannerHeadline = "One or more checks need more information.";
+    bannerNote =
+      "Needs attention is not a final rejection. Update documents or details as asked, then wait for re-review.";
+  } else if (anyInProgress || publication === "PENDING_VERIFICATION") {
+    bannerTitle = "HR APPROVED · VERIFICATION PENDING";
+    bannerHeadline = "Thanks — your application cleared HR screening.";
+    bannerNote =
+      "Background verification is next. Keep documents ready; we’ll flag anything that needs a clearer file.";
+  }
+
+  const submittedAt = profile?.applicationSubmittedAt;
+  const applicantNote = profile?.applicantMessage?.trim();
 
   if (loading && !profile) {
     return (
@@ -218,63 +146,100 @@ export function PsychologistBackgroundCheckScreen({ navigation }: Props) {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={() => void load("refresh")} tintColor={psychColors.primary} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => void load("refresh")}
+            tintColor={psychColors.primary}
+          />
         }
       >
         <OnboardingProgress step={4} onBack={() => navigation.goBack()} />
 
-        <View style={styles.banner}>
+        <View style={[styles.banner, clarify && !isLive ? styles.bannerWarn : null]}>
           <Text style={styles.bannerEyebrow}>{bannerTitle}</Text>
           <Text style={styles.bannerHeadline}>{bannerHeadline}</Text>
-          <Text style={styles.bannerTimeline}>{timeline}</Text>
-          <View style={styles.progressTrack}>
-            <View style={[styles.progressFill, { width: `${progressPct * 100}%` }]} />
-          </View>
+          <Text style={styles.bannerTimeline}>{bannerNote}</Text>
+          {submittedAt ? (
+            <Text style={styles.bannerMeta}>Submitted {formatShortDate(submittedAt)}</Text>
+          ) : null}
           <Text style={styles.progressLabel}>
-            {verifiedCount} of {CHECK_ORDER.length} checks done
+            {verifiedCount} of {VERIFICATION_CHECK_ORDER.length} checks verified
           </Text>
         </View>
 
-        <View style={styles.checklist}>
-          {rows.map((row) => {
-            const badge = statusBadge(row.status);
-            const icon = statusIcon(row.status);
-            return (
-              <View key={row.type} style={styles.checkRow}>
-                <View style={[styles.checkIcon, { backgroundColor: icon.bg }]}>
-                  <Text style={[styles.checkGlyph, { color: icon.color }]}>{icon.glyph}</Text>
-                </View>
-                <View style={styles.checkCopy}>
-                  <Text style={styles.checkTitle}>{CHECK_COPY[row.type].title}</Text>
-                  <Text style={styles.checkSub}>
-                    {descriptionFor(row.type, row.status, profile?.yearsPractising ?? null)}
-                  </Text>
-                </View>
-                <View style={[styles.badge, { backgroundColor: badge.bg }]}>
-                  <Text style={[styles.badgeText, { color: badge.ink }]}>{badge.label}</Text>
-                </View>
-              </View>
-            );
-          })}
-        </View>
+        {applicantNote && (clarify || needsDocs) ? (
+          <View style={styles.actionCard}>
+            <Text style={styles.actionLabel}>What we need</Text>
+            <Text style={styles.actionBody}>{applicantNote}</Text>
+          </View>
+        ) : null}
+
+        <Text style={styles.sectionTitle}>Verification checklist</Text>
+        <VerificationChecklist checks={profile?.checks} yearsPractising={profile?.yearsPractising} />
+
+        {clarifyAction ? (
+          <TextInput
+            style={styles.clarifyInput}
+            value={clarifyNote}
+            onChangeText={setClarifyNote}
+            placeholder="Your response to the verification team"
+            placeholderTextColor={psychColors.inkMuted}
+            multiline
+            maxLength={500}
+            editable={!clarifyBusy}
+          />
+        ) : null}
 
         <View style={styles.privacy}>
-          <View style={styles.privacyBadge}>
-            <Text style={styles.privacyBadgeText}>OK</Text>
-          </View>
           <Text style={styles.privacyText}>
-            Your documents are seen only by the U Mind verification team, never by clients. We&apos;ll
-            message you as each check clears.
+            Documents are seen only by the U Mind verification team, never by clients. Needs attention
+            means clarification — not a closed application.
           </Text>
         </View>
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
-        <PsychPrimaryButton label="Meanwhile, set your hours" onPress={onHoursCta} />
-        <Text style={styles.footnote}>Clients can book you only after every check passes.</Text>
+        {isLive ? (
+          <PsychPrimaryButton
+            label="Open professional workspace"
+            onPress={() => navigation.navigate("PsychologistMain")}
+          />
+        ) : needsDocs ? (
+          <PsychPrimaryButton
+            label="Update documents"
+            onPress={() => navigation.navigate("PsychologistDocumentsPlaceholder")}
+          />
+        ) : clarifyAction ? (
+          <>
+            <PsychPrimaryButton
+              label="Send clarification"
+              onPress={() => void onSubmitClarification()}
+              loading={clarifyBusy}
+              disabled={clarifyNote.trim().length < 3}
+            />
+            <PsychPrimaryButton
+              label="Update documents"
+              onPress={() => navigation.navigate("PsychologistDocumentsPlaceholder")}
+              style={styles.secondaryBtn}
+            />
+          </>
+        ) : clarify ? (
+          <PsychPrimaryButton
+            label="Review documents"
+            onPress={() => navigation.navigate("PsychologistDocumentsPlaceholder")}
+          />
+        ) : (
+          <PsychPrimaryButton label="Refresh status" onPress={() => void load("refresh")} loading={refreshing} />
+        )}
+
+        {!isLive ? (
+          <Text style={styles.footnote}>
+            Professional workspace opens only when your profile is published (LIVE).
+          </Text>
+        ) : null}
 
         <Pressable onPress={() => void load("refresh")} style={styles.refreshLink}>
-          <Text style={styles.refreshText}>Pull to refresh · Tap to reload status</Text>
+          <Text style={styles.refreshText}>Pull to refresh · Tap to reload</Text>
         </Pressable>
       </ScrollView>
     </SafeAreaView>
@@ -296,6 +261,9 @@ const styles = StyleSheet.create({
     padding: spacing.xl + 4,
     gap: spacing.sm,
   },
+  bannerWarn: {
+    backgroundColor: psychColors.flagInk,
+  },
   bannerEyebrow: {
     fontFamily: fonts.sansExtraBold,
     fontSize: 11,
@@ -312,97 +280,71 @@ const styles = StyleSheet.create({
     fontFamily: fonts.sans,
     fontSize: 13,
     lineHeight: 18,
-    color: "rgba(255,255,255,0.85)",
-    marginBottom: spacing.sm,
+    color: "rgba(255,255,255,0.9)",
   },
-  progressTrack: {
-    height: 8,
-    borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.25)",
-    overflow: "hidden",
-  },
-  progressFill: {
-    height: "100%",
-    borderRadius: 999,
-    backgroundColor: psychColors.sun,
+  bannerMeta: {
+    fontFamily: fonts.sansSemiBold,
+    fontSize: 12,
+    color: "rgba(255,255,255,0.8)",
   },
   progressLabel: {
+    marginTop: 4,
     fontFamily: fonts.sansSemiBold,
     fontSize: 12,
     color: "rgba(255,255,255,0.9)",
   },
-  checklist: {
-    backgroundColor: psychColors.surface,
-    borderRadius: radius.card,
-    paddingVertical: spacing.sm,
+  sectionTitle: {
+    fontFamily: fonts.sansExtraBold,
+    fontSize: 13,
+    letterSpacing: 0.6,
+    color: psychColors.inkMuted,
+    textTransform: "uppercase",
+    marginBottom: -8,
+  },
+  actionCard: {
+    backgroundColor: psychColors.flagBg,
+    borderRadius: radius.input,
     borderWidth: 1,
-    borderColor: psychColors.border,
+    borderColor: psychColors.flagBorder,
+    padding: spacing.lg,
+    gap: 6,
   },
-  checkRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.lg,
-  },
-  checkIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  checkGlyph: {
+  actionLabel: {
     fontFamily: fonts.sansExtraBold,
-    fontSize: 16,
+    fontSize: 12,
+    color: psychColors.flagInk,
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
   },
-  checkCopy: { flex: 1, gap: 2 },
-  checkTitle: {
-    fontFamily: fonts.sansExtraBold,
-    fontSize: 15,
+  actionBody: {
+    fontFamily: fonts.sans,
+    fontSize: 14,
+    lineHeight: 20,
     color: psychColors.ink,
   },
-  checkSub: {
+  clarifyInput: {
+    minHeight: 96,
+    borderRadius: radius.input,
+    borderWidth: 1.5,
+    borderColor: psychColors.border,
+    backgroundColor: psychColors.surface,
+    padding: 14,
     fontFamily: fonts.sans,
-    fontSize: 12,
-    lineHeight: 17,
-    color: psychColors.inkMuted,
+    fontSize: 15,
+    color: psychColors.ink,
+    textAlignVertical: "top",
   },
-  badge: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 999,
-  },
-  badgeText: {
-    fontFamily: fonts.sansBold,
-    fontSize: 11,
+  secondaryBtn: {
+    backgroundColor: psychColors.ink,
   },
   privacy: {
-    flexDirection: "row",
-    gap: spacing.md,
-    alignItems: "flex-start",
     backgroundColor: psychColors.sunTint,
     borderRadius: radius.input,
     padding: spacing.lg,
     borderWidth: 1,
     borderColor: "#F0D9A8",
   },
-  privacyBadge: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "#F5E6C8",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 1,
-  },
-  privacyBadgeText: {
-    fontFamily: fonts.sansExtraBold,
-    fontSize: 10,
-    color: psychColors.sunInk,
-  },
   privacyText: {
-    flex: 1,
     fontFamily: fonts.sans,
     fontSize: 13,
     lineHeight: 19,

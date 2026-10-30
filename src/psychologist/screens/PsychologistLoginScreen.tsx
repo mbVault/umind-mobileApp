@@ -28,8 +28,8 @@ type Gate = "chooser" | "signin" | "onboard";
 type Mode = "password" | "emailOtp" | "phoneOtp";
 
 /**
- * Chooser → Sign in (approved experts) or Onboard me (new applicants).
- * Google/Apple on Onboard me only verifies identity for the application — Account is created on HR approve.
+ * Chooser → Sign in (returning applicants + approved experts) or Onboard me (first identity).
+ * Sign in keeps APPLICANT sessions so status hub can resume; clinic only after PSYCHOLOGIST + LIVE.
  */
 export function PsychologistLoginScreen(_props: Props) {
   const {
@@ -163,8 +163,8 @@ export function PsychologistLoginScreen(_props: Props) {
           <View style={styles.hero}>
             <Text style={styles.title}>U Mind for experts</Text>
             <Text style={styles.lead}>
-              New here? Apply with Onboard me — HR reviews your details before an account is created.
-              Already approved? Sign in.
+              New here? Start with Onboard me. Already applied or approved? Sign in to check your
+              status or open the clinic when you’re live.
             </Text>
           </View>
 
@@ -217,8 +217,8 @@ export function PsychologistLoginScreen(_props: Props) {
             <Text style={styles.title}>{isOnboard ? "Onboard me" : "Welcome back"}</Text>
             <Text style={styles.lead}>
               {isOnboard
-                ? "Continue with Google, Apple, or a one-time code. That only verifies who you are — your expert account is created after HR approves your application."
-                : "Sign in with the same Google, Apple, email, or phone you used when you were approved."}
+                ? "Continue with Google, Apple, or a one-time code. That verifies who you are so you can apply. HR approval comes next; documents and the clinic come after."
+                : "Use the same Google, Apple, email, or phone as your application. You’ll land on your status if you’re still under review, or the clinic if you’re published."}
             </Text>
             {__DEV__ && !isOnboard ? (
               <Text style={styles.devCred}>Dev: psych@umind.local / UMindPsych1!</Text>

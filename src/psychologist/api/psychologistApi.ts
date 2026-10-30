@@ -35,6 +35,11 @@ export type PsychologistProfileDto = {
   applicationSubmittedAt?: string | null;
   hrApprovalStatus: string;
   hrRejectionReason?: string | null;
+  /** WAIT | RESUBMIT | UPLOAD_DOC | CLARIFY | CONTACT_SUPPORT | NONE */
+  applicantNextAction?: string;
+  applicantMessage?: string | null;
+  identityOnboardingBlocked?: boolean;
+  finalRejectionAt?: string | null;
   publicationStatus: string;
   accountStatus: string;
   publishedAt?: string | null;
@@ -90,6 +95,93 @@ export const submitPsychologistApplication = () =>
 /** Pre-HR screening submit (hrApprovalStatus stays PENDING_APPROVAL). */
 export const submitForHrReview = () =>
   staffRequest<PsychologistProfileDto>("/psychologist/me/application/submit-hr", { method: "POST" });
+
+/** F4 — applicant response when nextAction is CLARIFY. */
+export const submitClarificationResponse = (message: string) =>
+  staffRequest<PsychologistProfileDto>("/psychologist/me/application/clarification-response", {
+    method: "POST",
+    body: { message },
+  });
+
+export type PsychologistDocumentKind =
+  | "ID_FRONT"
+  | "ID_BACK"
+  | "LIVE_SELFIE"
+  | "PASSPORT_PHOTO"
+  | "DEGREE_CERTIFICATE"
+  | "RCI_CERTIFICATE"
+  | "EXPERIENCE_LETTER";
+
+export type PsychologistDocumentDto = {
+  id: string;
+  kind: PsychologistDocumentKind | string;
+  contentType: string;
+  byteSize: number;
+  status: string;
+  uploadedAt: string | null;
+  replacedAt: string | null;
+  rejectionReason: string | null;
+  createdAt: string;
+};
+
+export type DocumentUploadUrlDto = {
+  objectKey: string;
+  uploadUrl: string;
+  expiresAt: string;
+  headers: Record<string, string>;
+};
+
+export const REQUIRED_DOCUMENT_KINDS: PsychologistDocumentKind[] = [
+  "ID_FRONT",
+  "ID_BACK",
+  "LIVE_SELFIE",
+  "PASSPORT_PHOTO",
+  "DEGREE_CERTIFICATE",
+  "RCI_CERTIFICATE",
+  "EXPERIENCE_LETTER",
+];
+
+export const fetchPsychologistDocuments = () =>
+  staffRequest<{ documents: PsychologistDocumentDto[] }>("/psychologist/me/documents");
+
+export const requestDocumentUploadUrl = (body: {
+  kind: PsychologistDocumentKind;
+  contentType: string;
+  byteSize: number;
+}) =>
+  staffRequest<DocumentUploadUrlDto>("/psychologist/me/documents/upload-url", {
+    method: "POST",
+    body,
+  });
+
+export const confirmDocumentUpload = (body: {
+  kind: PsychologistDocumentKind;
+  objectKey: string;
+  contentType: string;
+  byteSize: number;
+}) =>
+  staffRequest<PsychologistDocumentDto>("/psychologist/me/documents/confirm", {
+    method: "POST",
+    body,
+  });
+
+export const requestDocumentReplacementUploadUrl = (
+  documentId: string,
+  body: { contentType: string; byteSize: number }
+) =>
+  staffRequest<DocumentUploadUrlDto>(
+    `/psychologist/me/documents/${documentId}/replacement-upload-url`,
+    { method: "POST", body }
+  );
+
+export const confirmDocumentReplacement = (
+  documentId: string,
+  body: { objectKey: string; contentType: string; byteSize: number }
+) =>
+  staffRequest<PsychologistDocumentDto>(
+    `/psychologist/me/documents/${documentId}/replacement-confirm`,
+    { method: "POST", body }
+  );
 
 export type DashboardBooking = {
   bookingId: string;
