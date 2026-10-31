@@ -22,6 +22,7 @@ export type SaathiReflectParams = {
 export type HomeStackParamList = {
   HomeMain: undefined;
   Profile: undefined;
+  Payments: undefined;
 };
 
 export type MainTabParamList = {

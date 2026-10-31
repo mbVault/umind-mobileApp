@@ -6,10 +6,15 @@ export type UserProfile = {
   avatarId: string;
   lifeStage: string;
   gender: string;
+  sexualOrientation: string | null;
   startingFeelings: string[];
   appTheme: string;
   city: string;
   saathiCheckIn: string;
+  saathiCheckInMode: string;
+  saathiCheckInSlots: string[];
+  saathiTimezone: string | null;
+  saathiTimezoneSource: string | null;
   saathiLanguage: string;
   unwindHabits: string[];
   status: string;

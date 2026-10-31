@@ -1,0 +1,100 @@
+{
+  "version": 1,
+  "lifeStage": [
+    { "id": "GROWING_UP", "label": "Growing up", "range": "12–19" },
+    { "id": "STARTING_OUT", "label": "Starting out", "range": "20–30" },
+    { "id": "BUILDING", "label": "Building", "range": "30–45" },
+    { "id": "SHIFTING", "label": "Shifting", "range": "45–60" },
+    { "id": "WISDOM_YEARS", "label": "Wisdom years", "range": "60+" }
+  ],
+  "gender": [
+    { "id": "WOMAN", "label": "Woman" },
+    { "id": "MAN", "label": "Man" },
+    { "id": "NON_BINARY", "label": "Non-binary" },
+    { "id": "PREFER_NOT_TO_SAY", "label": "Prefer not to say" }
+  ],
+  "sexualOrientation": [
+    { "id": "HETEROSEXUAL", "label": "Heterosexual" },
+    { "id": "HOMOSEXUAL", "label": "Homosexual" },
+    { "id": "BISEXUAL", "label": "Bisexual" },
+    { "id": "PANSEXUAL", "label": "Pansexual" },
+    { "id": "ASEXUAL", "label": "Asexual" },
+    { "id": "QUEER", "label": "Queer" },
+    { "id": "QUESTIONING", "label": "Questioning" },
+    { "id": "OTHER", "label": "Other" },
+    { "id": "PREFER_NOT_TO_SAY", "label": "Prefer not to say" }
+  ],
+  "startingFeelings": [
+    { "id": "STRESS", "label": "Stress" },
+    { "id": "ANXIETY", "label": "Anxiety" },
+    { "id": "GHABRAHAT", "label": "Ghabrahat" },
+    { "id": "LOW_MOOD", "label": "Feeling low" },
+    { "id": "SLEEP", "label": "Sleep" },
+    { "id": "LONELINESS", "label": "Loneliness" },
+    { "id": "RELATIONSHIPS", "label": "Relationships" },
+    { "id": "SELF_CARE", "label": "Self-care" },
+    { "id": "EXPLORING", "label": "I'm just exploring" }
+  ],
+  "saathiLanguage": [
+    { "id": "HINDI", "label": "Hindi" },
+    { "id": "ENGLISH", "label": "English" },
+    { "id": "HINGLISH", "label": "Hinglish" }
+  ],
+  "saathiCheckInMode": [
+    { "id": "SCHEDULED", "label": "Scheduled check-ins" },
+    { "id": "ONLY_WHEN_OPEN", "label": "Only when I open the app" }
+  ],
+  "saathiCheckInSlots": [
+    { "id": "H06_07", "label": "06:00–07:00", "group": "Morning" },
+    { "id": "H07_08", "label": "07:00–08:00", "group": "Morning" },
+    { "id": "H08_09", "label": "08:00–09:00", "group": "Morning" },
+    { "id": "H09_10", "label": "09:00–10:00", "group": "Morning" },
+    { "id": "H10_11", "label": "10:00–11:00", "group": "Morning" },
+    { "id": "H11_12", "label": "11:00–12:00", "group": "Afternoon" },
+    { "id": "H12_13", "label": "12:00–13:00", "group": "Afternoon" },
+    { "id": "H13_14", "label": "13:00–14:00", "group": "Afternoon" },
+    { "id": "H14_15", "label": "14:00–15:00", "group": "Afternoon" },
+    { "id": "H15_16", "label": "15:00–16:00", "group": "Afternoon" },
+    { "id": "H16_17", "label": "16:00–17:00", "group": "Evening" },
+    { "id": "H17_18", "label": "17:00–18:00", "group": "Evening" },
+    { "id": "H18_19", "label": "18:00–19:00", "group": "Evening" },
+    { "id": "H19_20", "label": "19:00–20:00", "group": "Evening" },
+    { "id": "H20_21", "label": "20:00–21:00", "group": "Night" },
+    { "id": "H21_22", "label": "21:00–22:00", "group": "Night" },
+    { "id": "H22_23", "label": "22:00–23:00", "group": "Night" },
+    { "id": "H23_00", "label": "23:00–00:00", "group": "Night" }
+  ],
+  "unwindHabits": [
+    { "id": "WALKING", "label": "Walking", "category": "Physical" },
+    { "id": "RUNNING", "label": "Running", "category": "Physical" },
+    { "id": "SPORTS", "label": "Playing sports", "category": "Physical" },
+    { "id": "YOGA", "label": "Yoga", "category": "Physical" },
+    { "id": "DANCING", "label": "Dancing", "category": "Physical" },
+    { "id": "STRENGTH_TRAINING", "label": "Strength training", "category": "Physical" },
+    { "id": "MEDITATION", "label": "Meditation", "category": "Mindfulness" },
+    { "id": "BREATHING", "label": "Breathing exercises", "category": "Mindfulness" },
+    { "id": "MINDFUL_OBSERVATION", "label": "Mindful observation", "category": "Mindfulness" },
+    { "id": "WRITING", "label": "Writing", "category": "Creative" },
+    { "id": "DRAWING", "label": "Drawing", "category": "Creative" },
+    { "id": "PAINTING", "label": "Painting", "category": "Creative" },
+    { "id": "MUSIC", "label": "Music", "category": "Creative" },
+    { "id": "CALM_SOUNDS", "label": "Listening to calming sounds", "category": "Relaxation" },
+    { "id": "READING", "label": "Reading", "category": "Relaxation" },
+    { "id": "NATURE", "label": "Spending time in nature", "category": "Relaxation" },
+    { "id": "TALKING_IT_OUT", "label": "Talking to someone", "category": "Social" },
+    { "id": "TIME_WITH_FRIENDS", "label": "Spending time with friends", "category": "Social" },
+    { "id": "TIME_WITH_FAMILY", "label": "Spending time with family", "category": "Social" },
+    { "id": "SELF_INQUIRY", "label": "Self-inquiry", "category": "Self-reflection" },
+    { "id": "LEARNING_PSYCHOLOGY", "label": "Learning psychology", "category": "Self-reflection" },
+    { "id": "SPIRITUAL_EXPLORATION", "label": "Spiritual exploration", "category": "Self-reflection" },
+    { "id": "ACTIONABLE_ADVICE", "label": "Actionable advice", "category": "Practical" },
+    { "id": "STRUCTURED_EXERCISES", "label": "Structured exercises", "category": "Practical" },
+    { "id": "HABIT_BUILDING", "label": "Habit building", "category": "Practical" },
+    { "id": "EXPLORING", "label": "I'm still exploring", "category": null },
+    { "id": "AYURVEDA_ROUTINES", "label": "Ayurveda routines", "category": "Relaxation" }
+  ],
+  "saathiTimezoneSource": [
+    { "id": "AUTO", "label": "Use device timezone" },
+    { "id": "MANUAL", "label": "Choose timezone" }
+  ]
+}

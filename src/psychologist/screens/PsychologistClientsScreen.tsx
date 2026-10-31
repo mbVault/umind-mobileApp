@@ -27,12 +27,21 @@ const LIFE_STAGE_AGE: Record<string, string> = {
 };
 
 const FEELING_LABEL: Record<string, string> = {
-  STRESSED: "Work stress",
-  ANXIOUS: "Anxiety",
+  STRESS: "Stress",
+  ANXIETY: "Anxiety",
   GHABRAHAT: "Ghabrahat",
-  LOW: "Low mood",
+  LOW_MOOD: "Feeling low",
+  SLEEP: "Sleep",
+  LONELINESS: "Loneliness",
+  RELATIONSHIPS: "Relationships",
+  SELF_CARE: "Self-care",
+  EXPLORING: "Exploring",
+  // legacy (pre-migration clients)
+  STRESSED: "Stress",
+  ANXIOUS: "Anxiety",
+  LOW: "Feeling low",
   CANT_SLEEP: "Sleep",
-  LONELY: "Lonely",
+  LONELY: "Loneliness",
 };
 
 const avatarPalette = ["#5B45E0", "#6B7C3A", "#8B2E4A", "#1971C2", "#9C6B00", "#D9480F"];

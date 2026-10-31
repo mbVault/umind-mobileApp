@@ -45,7 +45,7 @@ export function AliasScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <OnboardingStepHeader step={1} onBack={() => navigation.goBack()} />
+        <OnboardingStepHeader step={1} totalSteps={4} onBack={() => navigation.goBack()} />
 
         <Text style={typeScale.h1}>What should we call you?</Text>
         <Text style={[typeScale.bodyLarge, styles.lead]}>

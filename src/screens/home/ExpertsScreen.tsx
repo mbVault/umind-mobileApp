@@ -23,9 +23,30 @@ import {
 import { formatErrorMessage } from "../../api/formatErrorMessage";
 import { listPsychologists, type PublicPsychologist } from "../../api/psychologists";
 import { useAuthSession } from "../../auth/AuthSessionContext";
+import {
+  openRazorpayCheckout,
+  RazorpayCheckoutCancelledError,
+  RazorpayCheckoutFailedError,
+  type RazorpayCheckoutClient,
+} from "../../payments/razorpayCheckout";
+import { waitForBookingPayment } from "../../payments/waitForBookingPayment";
 import { useProfile } from "../../profile/ProfileContext";
 import { colors, radius, spacing } from "../../theme";
 import { fonts, typeScale } from "../../theme/typography";
+import { createIdempotencyKey } from "../../utils/idempotencyKey";
+
+function asRazorpayCheckout(value: unknown): RazorpayCheckoutClient | null {
+  if (!value || typeof value !== "object") return null;
+  const c = value as Partial<RazorpayCheckoutClient>;
+  if (typeof c.keyId !== "string" || typeof c.orderId !== "string") return null;
+  if (c.amount === undefined || typeof c.currency !== "string") return null;
+  return {
+    keyId: c.keyId,
+    orderId: c.orderId,
+    amount: c.amount,
+    currency: c.currency,
+  };
+}
 
 const MODES: { key: CommunicationMode; label: string }[] = [
   { key: "CHAT", label: "Chat" },
@@ -79,7 +100,7 @@ function specLabel(code: string): string {
 }
 
 export function ExpertsScreen() {
-  const { accessToken } = useAuthSession();
+  const { accessToken, user } = useAuthSession();
   const { profile } = useProfile();
   const [mode, setMode] = useState<CommunicationMode>("VOICE");
   const [spec, setSpec] = useState<(typeof SPECS)[number]["key"]>("STRESS");
@@ -168,25 +189,62 @@ export function ExpertsScreen() {
         slotId: selectedSlotId,
         communicationMode: mode,
       });
-      try {
-        await startBookingCheckout(accessToken, created.booking.id);
-      } catch {
-        // Checkout may need live payment keys; booking hold still created.
-      }
-      setBookingFor(null);
-      Alert.alert(
-        "Booking held",
-        `Session reserved (${mode.toLowerCase()}). Complete payment in checkout when ready — ₹499 · 40 min.`,
+
+      const checkoutRes = await startBookingCheckout(
+        accessToken,
+        created.booking.id,
+        createIdempotencyKey(),
       );
+
+      if (checkoutRes.provider !== "RAZORPAY") {
+        throw new Error(`Unsupported payment provider: ${checkoutRes.provider}`);
+      }
+
+      const razorpayCheckout = asRazorpayCheckout(checkoutRes.checkout);
+      if (!razorpayCheckout) {
+        throw new Error("Checkout response missing Razorpay fields (keyId/orderId)");
+      }
+
+      await openRazorpayCheckout({
+        checkout: razorpayCheckout,
+        description: `Session with ${bookingFor.publicName}`,
+        prefillName: user?.alias ?? profile?.alias,
+      });
+
+      const wait = await waitForBookingPayment({
+        accessToken,
+        bookingId: created.booking.id,
+        orderId: checkoutRes.order.id,
+      });
+
+      setBookingFor(null);
+
+      if (wait.outcome === "confirmed") {
+        Alert.alert("Booking confirmed", "Payment received. Your session is confirmed.");
+      } else if (wait.outcome === "expired") {
+        Alert.alert(
+          "Payment received, slot released",
+          "Hold expired before confirmation. If money was deducted, a refund will be processed.",
+        );
+      } else {
+        Alert.alert(
+          "Payment submitted",
+          "We're still confirming with the bank. Check My bookings shortly — status updates via webhook.",
+        );
+      }
       void load();
     } catch (e) {
-      if (e instanceof ApiError && e.statusCode === 403) {
+      if (e instanceof RazorpayCheckoutCancelledError) {
+        Alert.alert("Payment cancelled", "Your slot is held briefly — you can try paying again from booking.");
+      } else if (e instanceof RazorpayCheckoutFailedError) {
+        Alert.alert("Payment failed", e.message);
+      } else if (e instanceof ApiError && e.statusCode === 403) {
         Alert.alert(
           "Subscription needed",
           "Booking a psychologist needs an ACTIVE paid subscription (trial unlocks Saathi & audio only).",
         );
       } else {
-        Alert.alert("Booking failed", formatErrorMessage(e, "Could not create booking"));
+        Alert.alert("Booking failed", formatErrorMessage(e, "Could not complete booking payment"));
       }
     } finally {
       setBookingBusy(false);
@@ -352,7 +410,7 @@ export function ExpertsScreen() {
                 {bookingBusy ? (
                   <ActivityIndicator color="#FFFFFF" />
                 ) : (
-                  <Text style={styles.confirmText}>Hold slot</Text>
+                  <Text style={styles.confirmText}>Pay ₹499</Text>
                 )}
               </Pressable>
             </View>

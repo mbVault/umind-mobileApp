@@ -4,39 +4,52 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { OnboardingStepHeader } from "../components/OnboardingStepHeader";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { SelectChip } from "../components/SelectChip";
+import { GENDER_OPTIONS, ORIENTATION_OPTIONS } from "../onboarding/catalog";
 import { LIFE_STAGE_OPTIONS } from "../onboarding/lifeStageOptions";
 import { useOnboardingDraft } from "../onboarding/OnboardingDraftContext";
-import type { GenderKey } from "../onboarding/types";
 import { AuthStackParamList } from "../navigation/types";
 import { colors, radius, spacing, typeScale } from "../theme";
 import { fonts } from "../theme/typography";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "LifeStage">;
 
-const GENDERS: { key: GenderKey; label: string }[] = [
-  { key: "WOMAN", label: "Woman" },
-  { key: "MAN", label: "Man" },
-  { key: "PREFER_NOT_TO_SAY", label: "Rather not say" },
-];
-
 export function LifeStageScreen({ navigation }: Props) {
-  const { draft, setGender, setLifeStage } = useOnboardingDraft();
-  const canContinue = draft.gender !== null && draft.lifeStage !== null;
+  const { draft, setGender, setLifeStage, setSexualOrientation } = useOnboardingDraft();
+  const canContinue = draft.gender !== null && draft.lifeStage !== null && draft.sexualOrientation !== null;
 
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.content}>
-        <OnboardingStepHeader step={2} onBack={() => navigation.goBack()} />
+        <OnboardingStepHeader step={2} totalSteps={4} onBack={() => navigation.goBack()} />
 
-        <Text style={typeScale.h1}>A little about you</Text>
+        <Text style={typeScale.h1}>About you</Text>
+        <Text style={[typeScale.bodyLarge, styles.lead]}>A few details so U Mind can meet you where you are.</Text>
 
         <Text style={styles.sectionLabel}>I am…</Text>
         <View style={styles.chipRow}>
-          {GENDERS.map((g) => (
-            <SelectChip key={g.key} label={g.label} selected={draft.gender === g.key} onPress={() => setGender(g.key)} />
+          {GENDER_OPTIONS.map((g) => (
+            <SelectChip
+              key={g.id}
+              label={g.label}
+              selected={draft.gender === g.id}
+              onPress={() => setGender(g.id)}
+            />
           ))}
         </View>
-        <Text style={styles.hint}>Optional. Helps Saathi suggest things like cycle care or men's health sessions.</Text>
+        <Text style={styles.hint}>Required. Prefer not to say is fine.</Text>
+
+        <Text style={[styles.sectionLabel, styles.sectionGap]}>Sexual orientation</Text>
+        <View style={styles.chipRow}>
+          {ORIENTATION_OPTIONS.map((o) => (
+            <SelectChip
+              key={o.id}
+              label={o.label}
+              selected={draft.sexualOrientation === o.id}
+              onPress={() => setSexualOrientation(o.id)}
+            />
+          ))}
+        </View>
+        <Text style={styles.hint}>Required. Prefer not to say or Other are valid choices.</Text>
 
         <Text style={[styles.sectionLabel, styles.sectionGap]}>Which stage of life are you in?</Text>
         <Text style={styles.hint}>So Saathi can suggest what fits you. No birthday needed.</Text>
@@ -54,7 +67,9 @@ export function LifeStageScreen({ navigation }: Props) {
                   selected && styles.stageCardSelected,
                 ]}
               >
-                <Text style={[styles.range, { color: option.accent }]}>{option.range}</Text>
+                <Text style={[styles.range, { color: option.accent }]} numberOfLines={1}>
+                  {option.range}
+                </Text>
                 <View style={styles.stageCopy}>
                   <Text style={styles.stageTitle}>{option.title}</Text>
                   <Text style={styles.stageDesc}>{option.description}</Text>
@@ -74,6 +89,7 @@ export function LifeStageScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   content: { paddingHorizontal: spacing.flowHorizontal, paddingBottom: spacing.xxl, gap: spacing.md },
+  lead: { color: colors.inkMuted, marginBottom: spacing.sm },
   sectionLabel: { fontFamily: fonts.sansBold, fontSize: 15, color: colors.ink, marginTop: spacing.sm },
   sectionGap: { marginTop: spacing.lg },
   hint: { fontFamily: fonts.sans, fontSize: 13, color: colors.inkMuted, lineHeight: 19 },
@@ -89,7 +105,13 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   stageCardSelected: { borderColor: colors.primary, borderWidth: 2 },
-  range: { fontFamily: fonts.serif, fontSize: 22, width: 56 },
+  range: {
+    fontFamily: fonts.serif,
+    fontSize: 20,
+    width: 72,
+    flexShrink: 0,
+    textAlign: "left",
+  },
   stageCopy: { flex: 1, gap: 2 },
   stageTitle: { fontFamily: fonts.sansBold, fontSize: 16, color: colors.ink },
   stageDesc: { fontFamily: fonts.sans, fontSize: 13, color: colors.inkMuted },

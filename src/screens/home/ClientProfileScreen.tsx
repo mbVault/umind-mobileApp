@@ -18,6 +18,8 @@ import { useAuthSession } from "../../auth/AuthSessionContext";
 import {
   checkInChipLabel,
   feelingChipLabel,
+  genderLabel,
+  orientationLabel,
   lifeStageForYouLabel,
 } from "../../home/labels";
 import type { HomeStackParamList } from "../../navigation/types";
@@ -86,29 +88,16 @@ export function ClientProfileScreen() {
         ) : (
           <View style={styles.card}>
             <Row label="Life stage" value={lifeStageForYouLabel(profile?.lifeStage ?? "") || "—"} />
-            <Row
-              label="Gender"
-              value={
-                profile?.gender === "WOMAN"
-                  ? "Woman"
-                  : profile?.gender === "MAN"
-                    ? "Man"
-                    : profile?.gender === "PREFER_NOT_TO_SAY"
-                      ? "Prefer not to say"
-                      : "—"
-              }
-            />
+            <Row label="Gender" value={profile?.gender ? genderLabel(profile.gender) : "—"} />
+            <Row label="Orientation" value={orientationLabel(profile?.sexualOrientation)} />
             <Row label="City" value={profile?.city?.trim() || "—"} />
             <Row
               label="Saathi language"
               value={profile?.saathiLanguage?.replace(/_/g, " ") || "—"}
             />
+            <Row label="Check-in" value={profile ? checkInChipLabel(profile) : "—"} />
             <Row
-              label="Check-in"
-              value={profile?.saathiCheckIn ? checkInChipLabel(profile.saathiCheckIn) : "—"}
-            />
-            <Row
-              label="Starting feelings"
+              label="Support needs"
               value={
                 profile?.startingFeelings?.length
                   ? profile.startingFeelings.map(feelingChipLabel).join(", ")
@@ -117,6 +106,20 @@ export function ClientProfileScreen() {
             />
           </View>
         )}
+
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Plans and payments"
+          onPress={() => navigation.navigate("Payments")}
+          style={({ pressed }) => [styles.paymentsBtn, pressed && styles.paymentsPressed]}
+        >
+          <Ionicons name="card-outline" size={20} color={colors.primary} />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.paymentsTitle}>Plans & payments</Text>
+            <Text style={styles.paymentsSub}>Choose a plan and purchase with Razorpay</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={colors.inkMuted} />
+        </Pressable>
 
         <Pressable
           accessibilityRole="button"
@@ -192,6 +195,19 @@ const styles = StyleSheet.create({
   },
   rowLabel: { fontFamily: fonts.sansSemiBold, fontSize: 12, color: colors.inkMuted },
   rowValue: { fontFamily: fonts.sansMedium, fontSize: 15, color: colors.ink, lineHeight: 22 },
+  paymentsBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    padding: spacing.lg,
+    borderRadius: radius.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  paymentsPressed: { backgroundColor: colors.primaryTint },
+  paymentsTitle: { fontFamily: fonts.sansBold, fontSize: 15, color: colors.ink },
+  paymentsSub: { fontFamily: fonts.sans, fontSize: 12, color: colors.inkMuted, marginTop: 2 },
   logoutBtn: {
     height: 56,
     borderRadius: radius.pill,

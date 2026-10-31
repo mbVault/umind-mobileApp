@@ -1,4 +1,5 @@
 import { apiRequest } from "./client";
+import type { RazorpayCheckoutClient } from "../payments/razorpayCheckout";
 
 export type CommunicationMode = "CHAT" | "VOICE" | "VIDEO";
 
@@ -18,7 +19,34 @@ export type CreateBookingResult = {
     psychologistProfileId: string;
     requiresPayment: boolean;
   };
-  checkout?: unknown;
+};
+
+export type BookingCheckoutResult = {
+  bookingId: string;
+  order: {
+    id: string;
+    status: string;
+    purpose: string;
+    amountMinorUnits: number;
+    currency: string;
+    provider: string;
+  };
+  payment: {
+    id: string;
+    status: string;
+  };
+  checkout: RazorpayCheckoutClient | Record<string, unknown>;
+  provider: "RAZORPAY" | "STRIPE" | string;
+};
+
+export type BookingDetail = {
+  id: string;
+  status: string;
+  scheduledStartAt: string;
+  scheduledEndAt: string;
+  communicationMode: CommunicationMode;
+  psychologistProfileId: string;
+  session: { id: string; status: string } | null;
 };
 
 export function listPsychologistAvailability(
@@ -45,6 +73,15 @@ export function createBooking(
 export function startBookingCheckout(
   accessToken: string,
   bookingId: string,
-): Promise<unknown> {
-  return apiRequest(`/bookings/${bookingId}/checkout`, { method: "POST", accessToken });
+  idempotencyKey?: string,
+): Promise<BookingCheckoutResult> {
+  return apiRequest(`/bookings/${bookingId}/checkout`, {
+    method: "POST",
+    accessToken,
+    headers: idempotencyKey ? { "Idempotency-Key": idempotencyKey } : undefined,
+  });
+}
+
+export function getBooking(accessToken: string, bookingId: string): Promise<BookingDetail> {
+  return apiRequest(`/bookings/${bookingId}`, { accessToken });
 }

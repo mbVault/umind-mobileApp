@@ -127,7 +127,8 @@ export function HomeScreen() {
 
   const chips = useMemo(() => {
     const feelings = (profile?.startingFeelings ?? []).slice(0, 3).map(feelingChipLabel);
-    const checkIn = profile?.saathiCheckIn ? checkInChipLabel(profile.saathiCheckIn) : null;
+    const checkInLabel = profile ? checkInChipLabel(profile) : "—";
+    const checkIn = checkInLabel !== "—" ? checkInLabel : null;
     return [...feelings, ...(checkIn ? [checkIn] : [])];
   }, [profile]);
 

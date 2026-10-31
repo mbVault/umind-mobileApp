@@ -8,10 +8,14 @@ export type RegisterPayload = {
   avatarId: string;
   lifeStage: string;
   gender: string;
+  sexualOrientation: string;
   startingFeelings: string[];
   appTheme: string;
   city: string;
-  saathiCheckIn: string;
+  saathiCheckInMode: string;
+  saathiCheckInSlots: string[];
+  saathiTimezone: string;
+  saathiTimezoneSource: "AUTO" | "MANUAL";
   saathiLanguage: string;
   unwindHabits: string[];
   deviceId?: string;

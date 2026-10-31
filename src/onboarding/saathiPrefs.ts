@@ -1,50 +1,35 @@
 import type { OnboardingDraft } from "./OnboardingDraftContext";
-import type { SaathiCheckInKey, SaathiLanguageKey, UnwindHabitKey } from "./types";
-
-const CHECK_IN_BY_LABEL: Record<string, SaathiCheckInKey> = {
-  Morning: "MORNING",
-  Afternoon: "AFTERNOON",
-  Evening: "EVENING",
-  "Before bed": "BEFORE_BED",
-  "Only when I open it": "ONLY_WHEN_I_OPEN",
-};
-
-const UNWIND_BY_LABEL: Record<string, UnwindHabitKey> = {
-  Breathing: "BREATHING",
-  Walking: "WALKING",
-  "Talking it out": "TALKING_IT_OUT",
-  "Calm sounds": "CALM_SOUNDS",
-  Writing: "WRITING",
-  "Ayurveda routines": "AYURVEDA_ROUTINES",
-};
-
-const LANGUAGE_BY_LABEL: Record<string, SaathiLanguageKey> = {
-  Hindi: "HINDI",
-  English: "ENGLISH",
-  Hinglish: "HINGLISH",
-};
+import type { SaathiCheckInModeKey, SaathiCheckInSlotId, SaathiLanguageKey, UnwindHabitKey } from "./types";
 
 export type SaathiRegisterPrefs = {
-  saathiCheckIn: SaathiCheckInKey;
+  saathiCheckInMode: SaathiCheckInModeKey;
+  saathiCheckInSlots: SaathiCheckInSlotId[];
   saathiLanguage: SaathiLanguageKey;
   unwindHabits: UnwindHabitKey[];
+  saathiTimezone: string;
+  saathiTimezoneSource: "AUTO" | "MANUAL";
 };
 
-/** Maps onboarding UI labels to API enum values. Returns null if any required answer is missing or invalid. */
+/** Validates Saathi prefs on the draft. Returns null if incomplete. */
 export function saathiPrefsFromDraft(draft: OnboardingDraft): SaathiRegisterPrefs | null {
-  if (!draft.saathiCheckIn || !draft.saathiLanguage || draft.unwindHabits.length === 0) {
+  if (!draft.saathiLanguage || !draft.saathiCheckInMode || draft.unwindHabits.length === 0) {
+    return null;
+  }
+  if (!draft.saathiTimezone.trim()) return null;
+
+  if (draft.saathiCheckInMode === "SCHEDULED" && draft.saathiCheckInSlots.length === 0) {
+    return null;
+  }
+  if (draft.saathiCheckInMode === "ONLY_WHEN_OPEN" && draft.saathiCheckInSlots.length > 0) {
     return null;
   }
 
-  const saathiCheckIn = CHECK_IN_BY_LABEL[draft.saathiCheckIn];
-  const saathiLanguage = LANGUAGE_BY_LABEL[draft.saathiLanguage];
-  const unwindHabits = draft.unwindHabits
-    .map((label) => UNWIND_BY_LABEL[label])
-    .filter((v): v is UnwindHabitKey => v !== undefined);
-
-  if (!saathiCheckIn || !saathiLanguage || unwindHabits.length !== draft.unwindHabits.length) {
-    return null;
-  }
-
-  return { saathiCheckIn, saathiLanguage, unwindHabits };
+  return {
+    saathiCheckInMode: draft.saathiCheckInMode,
+    saathiCheckInSlots: draft.saathiCheckInMode === "ONLY_WHEN_OPEN" ? [] : draft.saathiCheckInSlots,
+    saathiLanguage: draft.saathiLanguage,
+    unwindHabits: draft.unwindHabits,
+    saathiTimezone: draft.saathiTimezone.trim(),
+    saathiTimezoneSource: draft.saathiTimezoneSource,
+  };
 }

@@ -18,7 +18,7 @@ export function ThemeCityScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <OnboardingStepHeader step={4} onBack={() => navigation.goBack()} />
+        <OnboardingStepHeader step={4} totalSteps={4} onBack={() => navigation.goBack()} />
 
         <Text style={typeScale.h1}>Pick your colours</Text>
         <Text style={[typeScale.bodyLarge, styles.lead]}>The whole app changes to match. Tap to try.</Text>

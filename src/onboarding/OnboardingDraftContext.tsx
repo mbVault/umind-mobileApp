@@ -1,7 +1,19 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 import { DEFAULT_AVATAR_ID } from "../avatars/catalog";
 import { DEFAULT_ALIAS } from "../utils/aliasSuggestions";
-import type { AppThemeKey, GenderKey, LifeStageKey, StartingFeelingKey } from "./types";
+import { deviceTimezone } from "./catalog";
+import type {
+  AppThemeKey,
+  GenderKey,
+  LifeStageKey,
+  SaathiCheckInModeKey,
+  SaathiCheckInSlotId,
+  SaathiLanguageKey,
+  SaathiTimezoneSourceKey,
+  SexualOrientationKey,
+  StartingFeelingKey,
+  UnwindHabitKey,
+} from "./types";
 
 export type OnboardingDraft = {
   alias: string;
@@ -9,12 +21,16 @@ export type OnboardingDraft = {
   recoveryKeyWords: string[];
   lifeStage: LifeStageKey | null;
   gender: GenderKey | null;
+  sexualOrientation: SexualOrientationKey | null;
   startingFeelings: StartingFeelingKey[];
   appTheme: AppThemeKey;
   city: string;
-  saathiCheckIn: string | null;
-  unwindHabits: string[];
-  saathiLanguage: string | null;
+  saathiCheckInMode: SaathiCheckInModeKey | null;
+  saathiCheckInSlots: SaathiCheckInSlotId[];
+  saathiTimezone: string;
+  saathiTimezoneSource: SaathiTimezoneSourceKey;
+  unwindHabits: UnwindHabitKey[];
+  saathiLanguage: SaathiLanguageKey | null;
   subscriptionPlan: "yearly" | "quarterly" | "monthly";
 };
 
@@ -25,12 +41,15 @@ type ContextValue = {
   setRecoveryKeyWords: (words: string[]) => void;
   setLifeStage: (lifeStage: LifeStageKey) => void;
   setGender: (gender: GenderKey) => void;
+  setSexualOrientation: (value: SexualOrientationKey) => void;
   toggleStartingFeeling: (feeling: StartingFeelingKey) => void;
   setAppTheme: (theme: AppThemeKey) => void;
   setCity: (city: string) => void;
-  setSaathiCheckIn: (value: string) => void;
-  toggleUnwindHabit: (value: string) => void;
-  setSaathiLanguage: (value: string) => void;
+  setSaathiCheckInMode: (mode: SaathiCheckInModeKey) => void;
+  toggleCheckInSlot: (slot: SaathiCheckInSlotId) => void;
+  setSaathiTimezone: (tz: string, source: SaathiTimezoneSourceKey) => void;
+  toggleUnwindHabit: (value: UnwindHabitKey) => void;
+  setSaathiLanguage: (value: SaathiLanguageKey) => void;
   setSubscriptionPlan: (plan: OnboardingDraft["subscriptionPlan"]) => void;
   resetDraft: () => void;
 };
@@ -41,10 +60,14 @@ const defaultDraft: OnboardingDraft = {
   recoveryKeyWords: [],
   lifeStage: null,
   gender: null,
+  sexualOrientation: null,
   startingFeelings: [],
   appTheme: "LAVENDER",
   city: "Delhi",
-  saathiCheckIn: null,
+  saathiCheckInMode: null,
+  saathiCheckInSlots: [],
+  saathiTimezone: deviceTimezone(),
+  saathiTimezoneSource: "AUTO",
   unwindHabits: [],
   saathiLanguage: null,
   subscriptionPlan: "yearly",
@@ -67,7 +90,7 @@ export function OnboardingDraftProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const toggleUnwindHabit = useCallback((value: string) => {
+  const toggleUnwindHabit = useCallback((value: UnwindHabitKey) => {
     setDraft((prev) => {
       const has = prev.unwindHabits.includes(value);
       return {
@@ -75,6 +98,27 @@ export function OnboardingDraftProvider({ children }: { children: ReactNode }) {
         unwindHabits: has ? prev.unwindHabits.filter((v) => v !== value) : [...prev.unwindHabits, value],
       };
     });
+  }, []);
+
+  const toggleCheckInSlot = useCallback((slot: SaathiCheckInSlotId) => {
+    setDraft((prev) => {
+      const has = prev.saathiCheckInSlots.includes(slot);
+      return {
+        ...prev,
+        saathiCheckInMode: "SCHEDULED",
+        saathiCheckInSlots: has
+          ? prev.saathiCheckInSlots.filter((s) => s !== slot)
+          : [...prev.saathiCheckInSlots, slot],
+      };
+    });
+  }, []);
+
+  const setSaathiCheckInMode = useCallback((mode: SaathiCheckInModeKey) => {
+    setDraft((prev) => ({
+      ...prev,
+      saathiCheckInMode: mode,
+      saathiCheckInSlots: mode === "ONLY_WHEN_OPEN" ? [] : prev.saathiCheckInSlots,
+    }));
   }, []);
 
   const value = useMemo<ContextValue>(
@@ -85,16 +129,20 @@ export function OnboardingDraftProvider({ children }: { children: ReactNode }) {
       setRecoveryKeyWords: (recoveryKeyWords) => setDraft((prev) => ({ ...prev, recoveryKeyWords })),
       setLifeStage: (lifeStage) => setDraft((prev) => ({ ...prev, lifeStage })),
       setGender: (gender) => setDraft((prev) => ({ ...prev, gender })),
+      setSexualOrientation: (sexualOrientation) => setDraft((prev) => ({ ...prev, sexualOrientation })),
       toggleStartingFeeling,
       setAppTheme: (appTheme) => setDraft((prev) => ({ ...prev, appTheme })),
       setCity: (city) => setDraft((prev) => ({ ...prev, city })),
-      setSaathiCheckIn: (saathiCheckIn) => setDraft((prev) => ({ ...prev, saathiCheckIn })),
+      setSaathiCheckInMode,
+      toggleCheckInSlot,
+      setSaathiTimezone: (saathiTimezone, saathiTimezoneSource) =>
+        setDraft((prev) => ({ ...prev, saathiTimezone, saathiTimezoneSource })),
       toggleUnwindHabit,
       setSaathiLanguage: (saathiLanguage) => setDraft((prev) => ({ ...prev, saathiLanguage })),
       setSubscriptionPlan: (subscriptionPlan) => setDraft((prev) => ({ ...prev, subscriptionPlan })),
-      resetDraft: () => setDraft(defaultDraft),
+      resetDraft: () => setDraft({ ...defaultDraft, saathiTimezone: deviceTimezone() }),
     }),
-    [draft, toggleStartingFeeling, toggleUnwindHabit],
+    [draft, toggleStartingFeeling, toggleUnwindHabit, toggleCheckInSlot, setSaathiCheckInMode],
   );
 
   return <OnboardingDraftContext.Provider value={value}>{children}</OnboardingDraftContext.Provider>;
